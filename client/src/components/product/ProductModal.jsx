@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, Star, ShoppingCart, Zap, ShieldCheck, Truck, RotateCcw, AlertTriangle, Check } from 'lucide-react';
+import { useCart } from '../../context/CartContext.jsx';
 
 export default function ProductModal({
   product,
   onClose,
-  onAddToCart,
   onBuyNow
 }) {
+  const { addToCart } = useCart();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
@@ -163,7 +164,8 @@ export default function ProductModal({
                   <button
                     className="btn btn-primary btn-modal-cart"
                     onClick={() => {
-                      onAddToCart(product, quantity);
+                      addToCart(product, quantity);
+                      onClose();
                     }}
                   >
                     <ShoppingCart size={18} />

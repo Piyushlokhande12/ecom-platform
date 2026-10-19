@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { X, CreditCard, DollarSign, Smartphone, ShieldCheck, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function CheckoutModal({
   isOpen,
   onClose,
   items,
   totalAmount,
-  user,
   onOrderSuccess
 }) {
+  const { user } = useAuth();
   const [shipping, setShipping] = useState({
     recipientName: user?.name || '',
     phone: '+1 (555) 789-0123',
@@ -239,7 +240,10 @@ export default function CheckoutModal({
                       checked={paymentMethod === 'CARD'}
                       onChange={() => setPaymentMethod('CARD')}
                     />
-                    <CreditCard size={22} color={paymentMethod === 'CARD' ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                    <CreditCard
+                      size={22}
+                      color={paymentMethod === 'CARD' ? 'var(--accent-primary)' : 'var(--text-muted)'}
+                    />
                     <div className="payment-label-text">
                       <strong>Credit / Debit Card</strong>
                       <span>Visa, MasterCard, Amex</span>
@@ -254,7 +258,10 @@ export default function CheckoutModal({
                       checked={paymentMethod === 'UPI'}
                       onChange={() => setPaymentMethod('UPI')}
                     />
-                    <Smartphone size={22} color={paymentMethod === 'UPI' ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                    <Smartphone
+                      size={22}
+                      color={paymentMethod === 'UPI' ? 'var(--accent-primary)' : 'var(--text-muted)'}
+                    />
                     <div className="payment-label-text">
                       <strong>UPI / Instant Pay</strong>
                       <span>Google Pay, Apple Pay, NetBanking</span>
@@ -269,7 +276,10 @@ export default function CheckoutModal({
                       checked={paymentMethod === 'COD'}
                       onChange={() => setPaymentMethod('COD')}
                     />
-                    <DollarSign size={22} color={paymentMethod === 'COD' ? 'var(--accent-primary)' : 'var(--text-muted)'} />
+                    <DollarSign
+                      size={22}
+                      color={paymentMethod === 'COD' ? 'var(--accent-primary)' : 'var(--text-muted)'}
+                    />
                     <div className="payment-label-text">
                       <strong>Cash on Delivery</strong>
                       <span>Pay upon courier arrival</span>

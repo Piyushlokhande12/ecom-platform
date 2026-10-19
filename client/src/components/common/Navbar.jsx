@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Search, ShieldCheck, User, Package, LogOut, Sparkles, Layers } from 'lucide-react';
+import { ShoppingBag, Search, ShieldCheck, User, Package, LogOut, Sparkles } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { useCart } from '../../context/CartContext.jsx';
 
 export default function Navbar({
-  user,
-  cartCount,
-  onOpenCart,
-  onOpenAuth,
-  onLogout,
   currentView,
   setCurrentView,
   searchQuery,
   setSearchQuery
 }) {
+  const { user, logout, setIsAuthOpen } = useAuth();
+  const { cart, setIsCartOpen } = useCart();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
@@ -79,12 +78,12 @@ export default function Navbar({
           {currentView !== 'admin' && (
             <button
               className="nav-icon-btn cart-btn"
-              onClick={onOpenCart}
+              onClick={() => setIsCartOpen(true)}
               title="Shopping Cart"
             >
               <ShoppingBag size={21} />
-              {cartCount > 0 && (
-                <span className="cart-badge-count">{cartCount}</span>
+              {cart.itemCount > 0 && (
+                <span className="cart-badge-count">{cart.itemCount}</span>
               )}
               <span className="nav-btn-label">Cart</span>
             </button>
@@ -111,7 +110,10 @@ export default function Navbar({
                   <div className="user-dropdown-header">
                     <p className="dropdown-user-name">{user.name}</p>
                     <p className="dropdown-user-email">{user.email}</p>
-                    <span className={`badge ${user.role === 'ADMIN' ? 'badge-info' : 'badge-neutral'}`} style={{ marginTop: 6 }}>
+                    <span
+                      className={`badge ${user.role === 'ADMIN' ? 'badge-info' : 'badge-neutral'}`}
+                      style={{ marginTop: 6 }}
+                    >
                       {user.role} ACCOUNT
                     </span>
                   </div>
@@ -146,8 +148,11 @@ export default function Navbar({
                     <button
                       className="dropdown-item dropdown-item-danger"
                       onClick={() => {
-                        onLogout();
+                        logout();
                         setShowUserMenu(false);
+                        if (currentView === 'admin' || currentView === 'orders') {
+                          setCurrentView('store');
+                        }
                       }}
                     >
                       <LogOut size={16} />
@@ -160,7 +165,7 @@ export default function Navbar({
           ) : (
             <button
               className="btn btn-primary btn-signin"
-              onClick={onOpenAuth}
+              onClick={() => setIsAuthOpen(true)}
             >
               <User size={17} />
               <span>Sign In</span>

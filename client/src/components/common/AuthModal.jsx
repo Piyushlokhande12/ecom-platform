@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { X, Lock, Mail, User, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
-import { api } from '../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess, onNotify }) {
+export default function AuthModal({ onNotify }) {
+  const { isAuthOpen, setIsAuthOpen, login, register, quickDemoLogin } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -13,7 +14,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onNotify }) 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  if (!isOpen) return null;
+  if (!isAuthOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,18 +22,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onNotify }) 
 
     try {
       setLoading(true);
-      let res;
       if (isRegister) {
-        res = await api.register(formData.name, formData.email, formData.password, formData.role);
-        onNotify('Account created! Welcome to Lumina.', 'success');
+        await register(formData.name, formData.email, formData.password, formData.role);
       } else {
-        res = await api.login(formData.email, formData.password);
-        onNotify(`Welcome back, ${res.user.name}!`, 'success');
+        await login(formData.email, formData.password);
       }
-
-      localStorage.setItem('token', res.token);
-      onAuthSuccess(res.user);
-      onClose();
     } catch (err) {
       setErrorMsg(err.message || 'Authentication failed');
     } finally {
@@ -40,19 +34,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onNotify }) 
     }
   };
 
-  // Instant 1-click Demo logins
   const handleQuickDemo = async (role) => {
     setErrorMsg('');
     try {
       setLoading(true);
-      const email = role === 'ADMIN' ? 'admin@store.com' : 'customer@store.com';
-      const password = role === 'ADMIN' ? 'adminpassword123' : 'customerpassword123';
-
-      const res = await api.login(email, password);
-      localStorage.setItem('token', res.token);
-      onNotify(`Logged in as demo ${role.toLowerCase()}!`, 'success');
-      onAuthSuccess(res.user);
-      onClose();
+      await quickDemoLogin(role);
     } catch (err) {
       setErrorMsg(err.message || 'Demo login failed');
     } finally {
@@ -61,9 +47,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, onNotify }) 
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => setIsAuthOpen(false)}>
       <div className="modal-dialog auth-modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose} title="Close">
+        <button
+          className="modal-close-btn"
+          onClick={() => setIsAuthOpen(false)}
+          title="Close"
+        >
           <X size={20} />
         </button>
 
