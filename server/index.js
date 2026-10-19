@@ -9,11 +9,11 @@ import { notFoundHandler, errorHandler } from './middlewares/error.middleware.js
 import authRoutes from './modules/auth/auth.routes.js';
 import usersRoutes from './modules/users/users.routes.js';
 import productRoutes from './modules/products/products.routes.js';
-import categoryRoutes from './modules/products/categories.routes.js';
-import inventoryRoutes from './modules/products/inventory.routes.js';
-import cartRoutes from './modules/orders/cart.routes.js';
+import categoryRoutes from './modules/categories/categories.routes.js';
+import inventoryRoutes from './modules/inventory/inventory.routes.js';
+import cartRoutes from './modules/cart/cart.routes.js';
 import orderRoutes from './modules/orders/orders.routes.js';
-import adminRoutes from './modules/orders/admin.routes.js';
+import adminRoutes from './modules/admin/admin.routes.js';
 
 const app = express();
 
@@ -77,12 +77,16 @@ app.get('/', (req, res) => {
     structure: {
       config: 'Database connection & environment configuration',
       middlewares: 'Authentication, admin authorization & error handling',
-      utils: 'JWT tokens, response formatters, slug generators',
+      utils: 'JWT tokens, slug generators',
       modules: {
         auth: '/api/auth',
         users: '/api/users',
-        products: '/api/products & /api/categories & /api/inventory',
-        orders: '/api/orders & /api/cart & /api/admin'
+        products: '/api/products',
+        categories: '/api/categories',
+        inventory: '/api/inventory',
+        cart: '/api/cart',
+        orders: '/api/orders',
+        admin: '/api/admin'
       }
     }
   });
@@ -94,9 +98,6 @@ app.use(errorHandler);
 
 // Start Server
 app.listen(ENV.PORT, () => {
-  console.log(`=========================================`);
-  console.log(`🚀 Modular E-commerce Server running on port ${ENV.PORT}`);
-  console.log(`📡 URL: http://localhost:${ENV.PORT}`);
-  console.log(`🗄️ Database: Neon PostgreSQL via Prisma`);
-  console.log(`=========================================`);
+  console.log(`E-commerce Server running on port ${ENV.PORT}`);
+  console.log(` URL: http://localhost:${ENV.PORT}`);
 });
