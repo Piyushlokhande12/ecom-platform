@@ -1,256 +1,188 @@
-// Lumina E-Commerce API Service Client
+import axios from 'axios';
 
-const API_BASE = '/api';
+// Base URL configuration for API calls
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
-};
+/**
+ * Configured Axios instance with Base URL and auto-injected Auth tokens
+ */
+export const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
 
+// Request Interceptor: Automatically attach Bearer token from localStorage
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Format error messages uniformly
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      'An unexpected error occurred';
+    return Promise.reject(new Error(message));
+  }
+);
+
+/**
+ * Standardized API service functions using Axios
+ */
 export const api = {
-  // Auth
+  // Authentication
   async login(email, password) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Login failed');
-    return data;
+    const res = await apiClient.post('/auth/login', { email, password });
+    return res.data;
   },
 
   async register(name, email, password, role = 'USER') {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registration failed');
-    return data;
+    const res = await apiClient.post('/auth/register', { name, email, password, role });
+    return res.data;
   },
 
   async getMe() {
-    const res = await fetch(`${API_BASE}/auth/me`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch user');
-    return res.json();
+    const res = await apiClient.get('/auth/me');
+    return res.data;
   },
 
   async getDemoAccounts() {
-    const res = await fetch(`${API_BASE}/auth/demo-accounts`);
-    return res.json();
+    const res = await apiClient.get('/auth/demo-accounts');
+    return res.data;
   },
 
   // Categories
   async getCategories() {
-    const res = await fetch(`${API_BASE}/categories`);
-    if (!res.ok) throw new Error('Failed to load categories');
-    return res.json();
+    const res = await apiClient.get('/categories');
+    return res.data;
   },
 
   async createCategory(catData) {
-    const res = await fetch(`${API_BASE}/categories`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(catData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to create category');
-    return data;
+    const res = await apiClient.post('/categories', catData);
+    return res.data;
   },
 
   // Products
   async getProducts(params = {}) {
-    const searchParams = new URLSearchParams();
-    if (params.category && params.category !== 'all') searchParams.append('category', params.category);
-    if (params.search) searchParams.append('search', params.search);
-    if (params.sort) searchParams.append('sort', params.sort);
-    if (params.featured) searchParams.append('featured', 'true');
+    const cleanParams = {};
+    if (params.category && params.category !== 'all') {
+      cleanParams.category = params.category;
+    }
+    if (params.search) cleanParams.search = params.search;
+    if (params.sort) cleanParams.sort = params.sort;
+    if (params.featured) cleanParams.featured = 'true';
 
-    const res = await fetch(`${API_BASE}/products?${searchParams.toString()}`);
-    if (!res.ok) throw new Error('Failed to load products');
-    return res.json();
+    const res = await apiClient.get('/products', { params: cleanParams });
+    return res.data;
   },
 
   async getProduct(id) {
-    const res = await fetch(`${API_BASE}/products/${id}`);
-    if (!res.ok) throw new Error('Product not found');
-    return res.json();
+    const res = await apiClient.get(`/products/${id}`);
+    return res.data;
   },
 
   async createProduct(productData) {
-    const res = await fetch(`${API_BASE}/products`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(productData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to create product');
-    return data;
+    const res = await apiClient.post('/products', productData);
+    return res.data;
   },
 
   async updateProduct(id, productData) {
-    const res = await fetch(`${API_BASE}/products/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(productData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update product');
-    return data;
+    const res = await apiClient.put(`/products/${id}`, productData);
+    return res.data;
   },
 
   async deleteProduct(id) {
-    const res = await fetch(`${API_BASE}/products/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to delete product');
-    return data;
+    const res = await apiClient.delete(`/products/${id}`);
+    return res.data;
   },
 
   // Cart
   async getCart() {
-    const res = await fetch(`${API_BASE}/cart`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to fetch cart');
-    return res.json();
+    const res = await apiClient.get('/cart');
+    return res.data;
   },
 
   async addToCart(productId, quantity = 1) {
-    const res = await fetch(`${API_BASE}/cart`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ productId, quantity })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to add item to cart');
-    return data;
+    const res = await apiClient.post('/cart', { productId, quantity });
+    return res.data;
   },
 
   async updateCartItem(id, quantity) {
-    const res = await fetch(`${API_BASE}/cart/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ quantity })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update cart quantity');
-    return data;
+    const res = await apiClient.put(`/cart/${id}`, { quantity });
+    return res.data;
   },
 
   async removeCartItem(id) {
-    const res = await fetch(`${API_BASE}/cart/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to remove item');
-    return data;
+    const res = await apiClient.delete(`/cart/${id}`);
+    return res.data;
   },
 
   async clearCart() {
-    const res = await fetch(`${API_BASE}/cart`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return res.json();
+    const res = await apiClient.delete('/cart');
+    return res.data;
   },
 
   // Orders
   async createOrder(orderData) {
-    const res = await fetch(`${API_BASE}/orders`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(orderData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Order failed');
-    return data;
+    const res = await apiClient.post('/orders', orderData);
+    return res.data;
   },
 
   async getMyOrders() {
-    const res = await fetch(`${API_BASE}/orders/my-orders`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to load orders');
-    return res.json();
+    const res = await apiClient.get('/orders/my-orders');
+    return res.data;
   },
 
   async getOrder(id) {
-    const res = await fetch(`${API_BASE}/orders/${id}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Order not found');
-    return res.json();
+    const res = await apiClient.get(`/orders/${id}`);
+    return res.data;
   },
 
   // Inventory (Admin)
   async getInventory() {
-    const res = await fetch(`${API_BASE}/inventory`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to load inventory');
-    return res.json();
+    const res = await apiClient.get('/inventory');
+    return res.data;
   },
 
   async updateStock(id, stock, delta) {
-    const res = await fetch(`${API_BASE}/inventory/${id}/stock`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ stock, delta })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update stock');
-    return data;
+    const res = await apiClient.put(`/inventory/${id}/stock`, { stock, delta });
+    return res.data;
   },
 
   // Admin
   async getAdminStats() {
-    const res = await fetch(`${API_BASE}/admin/stats`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to load admin stats');
-    return res.json();
+    const res = await apiClient.get('/admin/stats');
+    return res.data;
   },
 
   async getAdminOrders(status = 'ALL', search = '') {
-    const params = new URLSearchParams();
-    if (status && status !== 'ALL') params.append('status', status);
-    if (search) params.append('search', search);
+    const params = {};
+    if (status && status !== 'ALL') params.status = status;
+    if (search) params.search = search;
 
-    const res = await fetch(`${API_BASE}/admin/orders?${params.toString()}`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to load admin orders');
-    return res.json();
+    const res = await apiClient.get('/admin/orders', { params });
+    return res.data;
   },
 
   async updateOrderStatus(orderId, status) {
-    const res = await fetch(`${API_BASE}/admin/orders/${orderId}/status`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ status })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update order status');
-    return data;
+    const res = await apiClient.put(`/admin/orders/${orderId}/status`, { status });
+    return res.data;
   },
 
   async getAdminCustomers() {
-    const res = await fetch(`${API_BASE}/admin/customers`, {
-      headers: getAuthHeaders()
-    });
-    if (!res.ok) throw new Error('Failed to load customers');
-    return res.json();
+    const res = await apiClient.get('/admin/customers');
+    return res.data;
   }
 };
 
